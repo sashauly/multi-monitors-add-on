@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, visit https://www.gnu.org/licenses/.
 */
 
-const Lang = imports.lang;
-
 const GObject = imports.gi.GObject;
 const Gdk = imports.gi.Gdk;
 const Gtk = imports.gi.Gtk;
@@ -67,48 +65,89 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             this._display = Gdk.Display.get_default();
             this._monitors = this._display.get_monitors();
 
-            this._addBooleanSwitch(
-                _('Show Multi Monitors indicator on Top Panel.'),
-                SHOW_INDICATOR_ID
-            );
-            this._addBooleanSwitch(
-                _('Show Panel on additional monitors.'),
-                SHOW_PANEL_ID
-            );
-            this._addBooleanSwitch(
-                _('Show Activities-Button on additional monitors.'),
-                SHOW_ACTIVITIES_ID
-            );
-            this._addBooleanSwitch(
-                _('Show AppMenu-Button on additional monitors.'),
-                SHOW_APP_MENU_ID
-            );
-            this._addBooleanSwitch(
-                _('Show DateTime-Button on additional monitors.'),
-                SHOW_DATE_TIME_ID
-            );
-            this._addComboBoxSwitch(
-                _('Show Thumbnails-Slider on additional monitors.'),
-                THUMBNAILS_SLIDER_POSITION_ID,
-                {
-                    none: _('No'),
-                    right: _('On the right'),
-                    left: _('On the left'),
-                    auto: _('Auto'),
-                }
-            );
-            this._addSettingsBooleanSwitch(
-                _('Enable hot corners.'),
-                this._desktopSettings,
-                ENABLE_HOT_CORNERS
-            );
+            this._createUI();
+        }
 
+        add(child) {
+            this.attach(child, 0, this._numRows++, 1, 1);
+        }
+
+        _createUI() {
+            this._addSwitches();
+            this._setupStore();
+            this._createTreeview();
+            this._setupTreeviewColumns();
+            this._setupToolbar();
+            this._connectSignals();
+        }
+
+        _addSwitches() {
+            const switchConfigs = [
+                {
+                    label: _('Show Multi Monitors indicator on Top Panel.'),
+                    settingId: SHOW_INDICATOR_ID,
+                },
+                {
+                    label: _('Show Panel on additional monitors.'),
+                    settingId: SHOW_PANEL_ID,
+                },
+                {
+                    label: _('Show Activities-Button on additional monitors.'),
+                    settingId: SHOW_ACTIVITIES_ID,
+                },
+                {
+                    label: _('Show AppMenu-Button on additional monitors.'),
+                    settingId: SHOW_APP_MENU_ID,
+                },
+                {
+                    label: _('Show DateTime-Button on additional monitors.'),
+                    settingId: SHOW_DATE_TIME_ID,
+                },
+                {
+                    label: _('Show Thumbnails-Slider on additional monitors.'),
+                    settingId: THUMBNAILS_SLIDER_POSITION_ID,
+                    options: {
+                        none: _('No'),
+                        right: _('On the right'),
+                        left: _('On the left'),
+                        auto: _('Auto'),
+                    },
+                },
+                {
+                    label: _('Enable hot corners.'),
+                    settingId: ENABLE_HOT_CORNERS,
+                    settings: this._desktopSettings,
+                },
+            ];
+
+            switchConfigs.forEach((config) => {
+                if (config.settings) {
+                    this._addSettingsBooleanSwitch(
+                        config.label,
+                        config.settings,
+                        config.settingId
+                    );
+                } else if (config.options) {
+                    this._addComboBoxSwitch(
+                        config.label,
+                        config.settingId,
+                        config.options
+                    );
+                } else {
+                    this._addBooleanSwitch(config.label, config.settingId);
+                }
+            });
+        }
+
+        _setupStore() {
             this._store = new Gtk.ListStore();
             this._store.set_column_types([
                 GObject.TYPE_STRING,
                 GObject.TYPE_INT,
             ]);
+        }
 
+        _createTreeview() {
             this._treeView = new Gtk.TreeView({
                 model: this._store,
                 hexpand: true,
@@ -116,7 +155,11 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             });
             this._treeView.get_selection().set_mode(Gtk.SelectionMode.SINGLE);
 
-            let appColumn = new Gtk.TreeViewColumn({
+            this.add(this._treeView);
+        }
+
+        _setupTreeviewColumns() {
+            const appColumn = new Gtk.TreeViewColumn({
                 expand: true,
                 sort_column_id: Columns.INDICATOR_NAME,
                 title: _(
@@ -124,7 +167,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 ),
             });
 
-            let nameRenderer = new Gtk.CellRendererText();
+            const nameRenderer = new Gtk.CellRendererText();
             appColumn.pack_start(nameRenderer, true);
             appColumn.add_attribute(
                 nameRenderer,
@@ -132,44 +175,39 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 Columns.INDICATOR_NAME
             );
 
-            nameRenderer = new Gtk.CellRendererText();
-            appColumn.pack_start(nameRenderer, true);
+            const valueRenderer = new Gtk.CellRendererText();
+            appColumn.pack_start(valueRenderer, true);
             appColumn.add_attribute(
-                nameRenderer,
+                valueRenderer,
                 'text',
                 Columns.MONITOR_NUMBER
             );
 
             this._treeView.append_column(appColumn);
-            this.add(this._treeView);
+        }
 
-            let toolbar = new Gtk.Box({
+        _setupToolbar() {
+            this._toolbar = new Gtk.Box({
                 orientation: Gtk.Orientation.HORIZONTAL,
             });
-            toolbar.get_style_context().add_class('inline-toolbar');
+            this._toolbar.get_style_context().add_class('inline-toolbar');
 
-            this._settings.connect(
-                `changed::${TRANSFER_INDICATORS_ID}`,
-                Lang.bind(this, this._updateIndicators)
+            this.add(this._toolbar);
+        }
+
+        _connectSignals() {
+            this._settings.connect(`changed::${TRANSFER_INDICATORS_ID}`, () =>
+                this._updateIndicators()
             );
             this._updateIndicators();
 
-            let addTButton = new Gtk.Button({icon_name: 'list-add'});
-            addTButton.connect('clicked', Lang.bind(this, this._addIndicator));
-            toolbar.append(addTButton);
+            const addTButton = new Gtk.Button({icon_name: 'list-add'});
+            addTButton.connect('clicked', () => this._addIndicator);
+            this._toolbar.append(addTButton);
 
-            let removeTButton = new Gtk.Button({icon_name: 'list-remove'});
-            removeTButton.connect(
-                'clicked',
-                Lang.bind(this, this._removeIndicator)
-            );
-            toolbar.append(removeTButton);
-
-            this.add(toolbar);
-        }
-
-        add(child) {
-            this.attach(child, 0, this._numRows++, 1, 1);
+            const removeTButton = new Gtk.Button({icon_name: 'list-remove'});
+            removeTButton.connect('clicked', () => this._removeIndicator);
+            this._toolbar.append(removeTButton);
         }
 
         _updateIndicators() {
@@ -193,7 +231,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
         }
 
         _addIndicator() {
-            let dialog = new Gtk.Dialog({
+            const dialog = new Gtk.Dialog({
                 title: _('Select indicator'),
                 transient_for: this.get_toplevel(),
                 modal: true,
@@ -202,7 +240,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             dialog.add_button(_('Add'), Gtk.ResponseType.OK);
             dialog.set_default_response(Gtk.ResponseType.OK);
 
-            let grid = new Gtk.Grid({
+            const grid = new Gtk.Grid({
                 column_spacing: 10,
                 row_spacing: 15,
                 margin_top: 10,
@@ -213,7 +251,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
 
             grid.set_orientation(Gtk.Orientation.VERTICAL);
 
-            dialog._store = new Gtk.ListStore();
+            dialog._store = new Gtk.ListStore([GObject.TYPE_STRING]);
             dialog._store.set_column_types([GObject.TYPE_STRING]);
 
             dialog._treeView = new Gtk.TreeView({
@@ -223,26 +261,22 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             });
             dialog._treeView.get_selection().set_mode(Gtk.SelectionMode.SINGLE);
 
-            let appColumn = new Gtk.TreeViewColumn({
+            const appColumn = new Gtk.TreeViewColumn({
                 expand: true,
-                sort_column_id: Columns.INDICATOR_NAME,
+                sort_column_id: 0,
                 title: _('Indicators on Top Panel'),
             });
 
-            let nameRenderer = new Gtk.CellRendererText();
+            const nameRenderer = new Gtk.CellRendererText();
             appColumn.pack_start(nameRenderer, true);
-            appColumn.add_attribute(
-                nameRenderer,
-                'text',
-                Columns.INDICATOR_NAME
-            );
+            appColumn.add_attribute(nameRenderer, 'text', 0);
 
             dialog._treeView.append_column(appColumn);
 
-            let availableIndicators = () => {
+            const availableIndicators = () => {
                 let transfers = this._settings
                     .get_value(TRANSFER_INDICATORS_ID)
-                    .unpack();
+                    .deep_unpack();
                 dialog._store.clear();
                 this._settings
                     .get_strv(AVAILABLE_INDICATORS_ID)
@@ -258,11 +292,12 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                     });
             };
 
-            let availableIndicatorsId = this._settings.connect(
+            const availableIndicatorsId = this._settings.connect(
                 `changed::${AVAILABLE_INDICATORS_ID}`,
                 availableIndicators
             );
-            let transferIndicatorsId = this._settings.connect(
+
+            const transferIndicatorsId = this._settings.connect(
                 `changed::${TRANSFER_INDICATORS_ID}`,
                 availableIndicators
             );
@@ -270,7 +305,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             availableIndicators.apply(this);
             grid.attach(dialog._treeView, 0, 0, 2, 1);
 
-            let gHBox = new Gtk.Box({
+            const gHBox = new Gtk.Box({
                 orientation: Gtk.Orientation.HORIZONTAL,
                 margin_top: 10,
                 margin_end: 10,
@@ -279,30 +314,31 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 spacing: 20,
                 hexpand: true,
             });
-            let gLabel = new Gtk.Label({
+            const gLabel = new Gtk.Label({
                 label: _('Monitor index:'),
                 halign: Gtk.Align.START,
             });
             gHBox.append(gLabel);
+
             dialog._adjustment = new Gtk.Adjustment({
                 lower: 0.0,
                 upper: 0.0,
                 step_increment: 1.0,
             });
-            let spinButton = new Gtk.SpinButton({
+            const spinButton = new Gtk.SpinButton({
                 halign: Gtk.Align.END,
                 adjustment: dialog._adjustment,
                 numeric: 1,
             });
             gHBox.append(spinButton);
 
-            let monitorsChanged = () => {
-                let n_monitors = this._monitors.get_n_items() - 1;
-                dialog._adjustment.set_upper(n_monitors);
-                dialog._adjustment.set_value(n_monitors);
+            const monitorsChanged = () => {
+                let numberOfMonitors = this._monitors.get_n_items() - 1;
+                dialog._adjustment.set_upper(numberOfMonitors);
+                dialog._adjustment.set_value(numberOfMonitors);
             };
 
-            let monitorsChangedId = this._monitors.connect(
+            const monitorsChangedId = this._monitors.connect(
                 'items-changed',
                 monitorsChanged
             );
@@ -316,7 +352,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 this._monitors.disconnect(monitorsChangedId);
                 this._settings.disconnect(availableIndicatorsId);
                 this._settings.disconnect(transferIndicatorsId);
-                if (id != Gtk.ResponseType.OK) {
+                if (id !== Gtk.ResponseType.OK) {
                     dialog.destroy();
                     return;
                 }
@@ -366,17 +402,17 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             }
         }
 
-        _addComboBoxSwitch(label, schema_id, options) {
+        _addComboBoxSwitch(label, schemaId, options) {
             this._addSettingsComboBoxSwitch(
                 label,
                 this._settings,
-                schema_id,
+                schemaId,
                 options
             );
         }
 
-        _addSettingsComboBoxSwitch(label, settings, schema_id, options) {
-            let gHBox = new Gtk.Box({
+        _addSettingsComboBoxSwitch(label, settings, schemaId, options) {
+            const gHBox = new Gtk.Box({
                 orientation: Gtk.Orientation.HORIZONTAL,
                 margin_top: 10,
                 margin_end: 10,
@@ -385,15 +421,14 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 spacing: 20,
                 hexpand: true,
             });
-            let gLabel = new Gtk.Label({
+            const gLabel = new Gtk.Label({
                 label: _(label),
                 halign: Gtk.Align.START,
             });
             gHBox.append(gLabel);
 
-            let gCBox = new Gtk.ComboBoxText({halign: Gtk.Align.END});
-            Object.entries(options).forEach((entry) => {
-                const [key, val] = entry;
+            const gCBox = new Gtk.ComboBoxText({halign: Gtk.Align.END});
+            Object.entries(options).forEach(([key, val]) => {
                 gCBox.append(key, val);
             });
             gHBox.append(gCBox);
@@ -401,19 +436,19 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             this.add(gHBox);
 
             settings.bind(
-                schema_id,
+                schemaId,
                 gCBox,
                 'active-id',
                 Gio.SettingsBindFlags.DEFAULT
             );
         }
 
-        _addBooleanSwitch(label, schema_id) {
-            this._addSettingsBooleanSwitch(label, this._settings, schema_id);
+        _addBooleanSwitch(label, schemaId) {
+            this._addSettingsBooleanSwitch(label, this._settings, schemaId);
         }
 
-        _addSettingsBooleanSwitch(label, settings, schema_id) {
-            let gHBox = new Gtk.Box({
+        _addSettingsBooleanSwitch(label, settings, schemaId) {
+            const gHBox = new Gtk.Box({
                 orientation: Gtk.Orientation.HORIZONTAL,
                 margin_top: 10,
                 margin_end: 10,
@@ -422,17 +457,17 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 spacing: 20,
                 hexpand: true,
             });
-            let gLabel = new Gtk.Label({
+            const gLabel = new Gtk.Label({
                 label: _(label),
                 halign: Gtk.Align.START,
             });
             gHBox.append(gLabel);
-            let gSwitch = new Gtk.Switch({halign: Gtk.Align.END});
+            const gSwitch = new Gtk.Switch({halign: Gtk.Align.END});
             gHBox.append(gSwitch);
             this.add(gHBox);
 
             settings.bind(
-                schema_id,
+                schemaId,
                 gSwitch,
                 'active',
                 Gio.SettingsBindFlags.DEFAULT
@@ -441,7 +476,11 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
     }
 );
 
-function init() {
+/**
+ * @param {object} metadata - The metadata.json file, parsed as JSON
+ */
+function init(metadata) {
+    log(`initializing ${metadata.name} Preferences`);
     Convenience.initTranslations();
 }
 

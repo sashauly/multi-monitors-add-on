@@ -198,10 +198,10 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
         let j = 0;
         let tIndicators = false;
         for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
-            if (i != Main.layoutManager.primaryIndex) {
+            if (i !== Main.layoutManager.primaryIndex) {
                 let monitor = Main.layoutManager.monitors[i];
                 let monitorId = `i${i}x${monitor.x}y${monitor.y}w${monitor.width}h${monitor.height}`;
-                if (monitorChange > 0 && j == this._monitorIds.length) {
+                if (monitorChange > 0 && j === this._monitorIds.length) {
                     this._monitorIds.push(monitorId);
                     this._pushPanel(i, monitor);
                     global.log(`new: ${monitorId}`);

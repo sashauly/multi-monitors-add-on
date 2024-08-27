@@ -38,21 +38,45 @@ const WORKSPACES_ONLY_ON_PRIMARY_ID = 'workspaces-only-on-primary';
 const SHOW_INDICATOR_ID = 'show-indicator';
 const THUMBNAILS_SLIDER_POSITION_ID = 'thumbnails-slider-position';
 
-function copyClass(s, d) {
-    //    global.log(s.name +" > "+ d.name);
-    if (!s) throw Error(`copyClass s undefined for d ${d.name}`);
-    let propertyNames = Reflect.ownKeys(s.prototype);
-    for (let pName of propertyNames.values()) {
-        //        global.log(" ) "+pName.toString());
-        if (typeof pName === 'symbol') continue;
-        if (d.prototype.hasOwnProperty(pName)) continue;
-        if (pName === 'prototype') continue;
-        if (pName === 'constructor') continue;
-        //        global.log(pName);
-        let pDesc = Reflect.getOwnPropertyDescriptor(s.prototype, pName);
-        //        global.log(typeof pDesc);
-        if (typeof pDesc !== 'object') continue;
-        Reflect.defineProperty(d.prototype, pName, pDesc);
+/**
+ * @name copyClass
+ *
+ * @description Copies properties from one class to another, excluding certain special properties.
+ *
+ * @param {object} source - The class from which to copy properties.
+ * @param {object} dest - The class to which properties will be copied.
+ * @throws {Error} If the source class is undefined.
+ */
+function copyClass(source, dest) {
+    if (!source) {
+        throw new Error(
+            `copyClass source undefined for destination ${dest.name}`
+        );
+    }
+
+    const propertyNames = Reflect.ownKeys(
+        Object.getOwnPropertyDescriptors(source.prototype)
+    );
+
+    for (const propertyName of propertyNames) {
+        if (
+            typeof propertyName === 'symbol' ||
+            dest.prototype.hasOwnProperty(propertyName) ||
+            ['prototype', 'constructor'].includes(propertyName)
+        ) {
+            continue;
+        }
+
+        const propertyDescriptor = Object.getOwnPropertyDescriptor(
+            source.prototype,
+            propertyName
+        );
+
+        if (typeof propertyDescriptor !== 'object') {
+            continue;
+        }
+
+        Object.defineProperty(dest.prototype, propertyName, propertyDescriptor);
     }
 }
 
@@ -61,9 +85,11 @@ function gnomeShellVersion() {
 }
 
 class MultiMonitorsAddOn {
-    constructor() {
+    constructor(uuid, version) {
+        this._uuid = uuid;
+        this._version = version;
         this._settings = Convenience.getSettings();
-        //        this._ov_settings = new Gio.Settings({ schema: OVERRIDE_SCHEMA });
+        //    this._ov_settings = new Gio.Settings({ schema: OVERRIDE_SCHEMA });
         this._mu_settings = new Gio.Settings({schema: MUTTER_SCHEMA});
 
         this.mmIndicator = null;
@@ -102,8 +128,8 @@ class MultiMonitorsAddOn {
             return;
         }
 
-        //		if(this._ov_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
-        //			this._ov_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
+        // if (this._ov_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
+        //     this._ov_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
         if (this._mu_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
             this._mu_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
 
@@ -111,7 +137,7 @@ class MultiMonitorsAddOn {
 
         Main.mmOverview = [];
         for (let idx = 0; idx < Main.layoutManager.monitors.length; idx++) {
-            if (idx != Main.layoutManager.primaryIndex) {
+            if (idx !== Main.layoutManager.primaryIndex) {
                 Main.mmOverview[idx] = new MMOverview.MultiMonitorsOverview(
                     idx
                 );
@@ -168,7 +194,7 @@ class MultiMonitorsAddOn {
     }
 
     _relayout() {
-        if (this._mmMonitors != Main.layoutManager.monitors.length) {
+        if (this._mmMonitors !== Main.layoutManager.monitors.length) {
             this._mmMonitors = Main.layoutManager.monitors.length;
             global.log(`pi:${Main.layoutManager.primaryIndex}`);
             for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
@@ -184,22 +210,24 @@ class MultiMonitorsAddOn {
 
     _switchOffThumbnails() {
         if (
-            //            this._ov_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID) ||
+            // this._ov_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID) ||
             this._mu_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID)
         ) {
             this._settings.set_string(THUMBNAILS_SLIDER_POSITION_ID, 'none');
         }
     }
 
-    enable(version) {
-        global.log(`Enable Multi Monitors Add-On (${version})...`);
+    enable() {
+        global.log(`Enabling Multi Monitors Add-On (${this._version})...`);
 
-        if (Main.panel.statusArea.MultiMonitorsAddOn) disable();
+        if (Main.panel.statusArea.MultiMonitorsAddOn) this.disable();
 
         this._mmMonitors = 0;
 
-        //		this._switchOffThumbnailsOvId = this._ov_settings.connect('changed::'+WORKSPACES_ONLY_ON_PRIMARY_ID,
-        //																	this._switchOffThumbnails.bind(this));
+        // this._switchOffThumbnailsOvId = this._ov_settings.connect(
+        //     `changed::${WORKSPACES_ONLY_ON_PRIMARY_ID}`,
+        //     this._switchOffThumbnails.bind(this)
+        // );
         this._switchOffThumbnailsMuId = this._mu_settings.connect(
             `changed::${WORKSPACES_ONLY_ON_PRIMARY_ID}`,
             this._switchOffThumbnails.bind(this)
@@ -231,7 +259,7 @@ class MultiMonitorsAddOn {
 
     disable() {
         Main.layoutManager.disconnect(this._relayoutId);
-        //		this._ov_settings.disconnect(this._switchOffThumbnailsOvId);
+        // this._ov_settings.disconnect(this._switchOffThumbnailsOvId);
         this._mu_settings.disconnect(this._switchOffThumbnailsMuId);
 
         this._settings.disconnect(this._showPanelId);
@@ -246,14 +274,40 @@ class MultiMonitorsAddOn {
         this._hideThumbnailsSlider();
         this._mmMonitors = 0;
 
-        global.log('Disable Multi Monitors Add-On ...');
+        this._version = null;
+        this._uuid = null;
+
+        global.log('Disabling Multi Monitors Add-On ...');
     }
 }
 
-var multiMonitorsAddOn = null;
-var version = null;
+/**
+ * @typedef ExtensionMeta
+ * @type {object}
+ * @property {object} metadata - the metadata.json file, parsed as JSON
+ * @property {string} uuid - the extension UUID
+ * @property {number} type - the extension type; `1` for system, `2` for user
+ * @property {Gio.File} dir - the extension directory
+ * @property {string} path - the extension directory path
+ * @property {string} error - an error message or an empty string if no error
+ * @property {boolean} hasPrefs - whether the extension has a preferences dialog
+ * @property {boolean} hasUpdate - whether the extension has a pending update
+ * @property {boolean} canChange - whether the extension can be enabled/disabled
+ * @property {string[]} sessionModes - a list of supported session modes
+ */
 
-function init() {
+/**
+ * This function is called once when your extension is loaded, not enabled. This
+ * is a good time to setup translations or anything else you only do once.
+ *
+ * You MUST NOT make any changes to GNOME Shell, connect any signals or add any
+ * MainLoop sources here.
+ *
+ * @param {ExtensionMeta} meta - An extension meta object
+ * @returns {object} an object with enable() and disable() methods
+ */
+function init(meta) {
+    let version;
     Convenience.initTranslations();
 
     // fix bug in panel: Destroy function many time added to this same indicator.
@@ -290,19 +344,9 @@ function init() {
                 version += '+modified';
                 break;
         }
-    } else version = metaVersion;
-}
+    } else {
+        version = metaVersion;
+    }
 
-function enable() {
-    if (multiMonitorsAddOn !== null) return;
-
-    multiMonitorsAddOn = new MultiMonitorsAddOn();
-    multiMonitorsAddOn.enable(version);
-}
-
-function disable() {
-    if (multiMonitorsAddOn == null) return;
-
-    multiMonitorsAddOn.disable();
-    multiMonitorsAddOn = null;
+    return new MultiMonitorsAddOn(meta, version);
 }

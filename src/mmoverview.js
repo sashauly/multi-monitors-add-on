@@ -316,7 +316,7 @@ const MultiMonitorsThumbnailsBox = (() => {
                 this._thumbnails.push(thumbnail);
                 this.add_actor(thumbnail);
 
-                if (start > 0 && this._spliceIndex == -1) {
+                if (start > 0 && this._spliceIndex === -1) {
                     // not the initial fill, and not splicing via DND
                     thumbnail.state = WorkspaceThumbnail.ThumbnailState.NEW;
                     thumbnail.slide_position = 1; // start slid out
@@ -576,30 +576,28 @@ var MultiMonitorsControlsManager = GObject.registerClass(
         _updateSpacerVisibility() {
             if (Main.layoutManager.monitors.length < this._monitorIndex) return;
 
-            let top_spacer_height = Main.layoutManager.primaryMonitor.height;
+            let topSpacerHeight = Main.layoutManager.primaryMonitor.height;
 
-            let panelGhost_height = 0;
+            let panelGhostHeight = 0;
             if (Main.mmOverview[this._monitorIndex]._overview._panelGhost)
-                panelGhost_height =
+                panelGhostHeight =
                     Main.mmOverview[
                         this._monitorIndex
                     ]._overview._panelGhost.get_height();
 
             let allocation = Main.overview._overview._controls.allocation;
-            let primaryControl_height = allocation.get_height();
-            let bottom_spacer_height =
+            let primaryControlHeight = allocation.get_height();
+            let bottomSpacerHeight =
                 Main.layoutManager.primaryMonitor.height - allocation.y2;
 
-            top_spacer_height -=
-                primaryControl_height +
-                panelGhost_height +
-                bottom_spacer_height;
-            top_spacer_height = Math.round(top_spacer_height);
+            topSpacerHeight -=
+                primaryControlHeight + panelGhostHeight + bottomSpacerHeight;
+            topSpacerHeight = Math.round(topSpacerHeight);
 
             let spacer = Main.mmOverview[this._monitorIndex]._overview._spacer;
-            if (spacer.get_height() != top_spacer_height) {
-                this._spacer_height = top_spacer_height;
-                spacer.set_height(top_spacer_height);
+            if (spacer.get_height() !== topSpacerHeight) {
+                this._spacer_height = topSpacerHeight;
+                spacer.set_height(topSpacerHeight);
             }
         }
 
@@ -620,7 +618,9 @@ var MultiMonitorsControlsManager = GObject.registerClass(
                 geometry = {x, y, width, height};
             }
             if (isNaN(geometry.x)) return null;
-            // global.log("actualG+ i: "+this._monitorIndex+" x: "+geometry.x+" y: "+geometry.y+" width: "+geometry.width+" height: "+geometry.height);
+            global.log(
+                `actualG+ i: ${this._monitorIndex} x: ${geometry.x} y: ${geometry.y} width: ${geometry.width} height: ${geometry.height}`
+            );
             return geometry;
         }
 
@@ -638,7 +638,7 @@ var MultiMonitorsControlsManager = GObject.registerClass(
 
             let activePage = Main.overview.searchController.getActivePage();
             let thumbnailsVisible =
-                activePage == SearchController.ViewPage.WINDOWS;
+                activePage === SearchController.ViewPage.WINDOWS;
 
             let opacity = null;
             if (thumbnailsVisible) {

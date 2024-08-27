@@ -66,11 +66,11 @@ var StatusIndicatorsController = class StatusIndicatorsController {
     }
 
     transferBack(panel) {
-        let transfer_back = this._transfered_indicators.filter((element) => {
-            return element.monitor == panel.monitorIndex;
+        let transferBack = this._transfered_indicators.filter((element) => {
+            return element.monitor === panel.monitorIndex;
         });
 
-        this._transferBack(transfer_back, panel);
+        this._transferBack(transferBack, panel);
     }
 
     transferIndicators() {
@@ -78,13 +78,13 @@ var StatusIndicatorsController = class StatusIndicatorsController {
         let transfers = this._settings
             .get_value(TRANSFER_INDICATORS_ID)
             .deep_unpack();
-        let show_app_menu = this._settings.get_value(SHOW_APP_MENU_ID);
+        let showAppMenu = this._settings.get_value(SHOW_APP_MENU_ID);
 
-        let transfer_back = this._transfered_indicators.filter((element) => {
+        let transferBack = this._transfered_indicators.filter((element) => {
             return !transfers.hasOwnProperty(element.iname);
         });
 
-        this._transferBack(transfer_back);
+        this._transferBack(transferBack);
 
         for (let iname in transfers) {
             if (
@@ -103,7 +103,7 @@ var StatusIndicatorsController = class StatusIndicatorsController {
                         global.log(`a ${box} > ${iname} : ${monitor}`);
                         this._transfered_indicators.push({iname, box, monitor});
                         Main.panel[box].remove_child(indicator.container);
-                        if (show_app_menu && box === '_leftBox')
+                        if (showAppMenu && box === '_leftBox')
                             panel[box].insert_child_at_index(
                                 indicator.container,
                                 1
@@ -121,15 +121,15 @@ var StatusIndicatorsController = class StatusIndicatorsController {
 
     _findPanel(monitor) {
         for (let i = 0; i < Main.mmPanel.length; i++) {
-            if (Main.mmPanel[i].monitorIndex == monitor) {
+            if (Main.mmPanel[i].monitorIndex === monitor) {
                 return Main.mmPanel[i];
             }
         }
         return null;
     }
 
-    _transferBack(transfer_back, panel) {
-        transfer_back.forEach((element) => {
+    _transferBack(transferBack, panel) {
+        transferBack.forEach((element) => {
             this._transfered_indicators.splice(
                 this._transfered_indicators.indexOf(element)
             );
@@ -164,15 +164,15 @@ var StatusIndicatorsController = class StatusIndicatorsController {
     }
 
     _updateSessionIndicators() {
-        let session_indicators = [];
-        session_indicators.push('MultiMonitorsAddOn');
+        let sessionIndicators = [];
+        sessionIndicators.push('MultiMonitorsAddOn');
         let sessionPanel = Main.sessionMode.panel;
         for (let sessionBox in sessionPanel) {
             sessionPanel[sessionBox].forEach((sesionIndicator) => {
-                session_indicators.push(sesionIndicator);
+                sessionIndicators.push(sesionIndicator);
             });
         }
-        this._session_indicators = session_indicators;
+        this._session_indicators = sessionIndicators;
         this._available_indicators = [];
 
         this._findAvailableIndicators();
@@ -180,18 +180,18 @@ var StatusIndicatorsController = class StatusIndicatorsController {
     }
 
     _findAvailableIndicators() {
-        let available_indicators = [];
+        let availableIndicators = [];
         let statusArea = Main.panel.statusArea;
         for (let indicator in statusArea) {
             if (
                 statusArea.hasOwnProperty(indicator) &&
                 this._session_indicators.indexOf(indicator) < 0
             ) {
-                available_indicators.push(indicator);
+                availableIndicators.push(indicator);
             }
         }
-        if (available_indicators.length != this._available_indicators.length) {
-            this._available_indicators = available_indicators;
+        if (availableIndicators.length !== this._available_indicators.length) {
+            this._available_indicators = availableIndicators;
             //			global.log(this._available_indicators);
             this._settings.set_strv(
                 AVAILABLE_INDICATORS_ID,
@@ -204,7 +204,7 @@ var StatusIndicatorsController = class StatusIndicatorsController {
 var MultiMonitorsAppMenuButton = (() => {
     let MultiMonitorsAppMenuButton = class MultiMonitorsAppMenuButton extends PanelMenu.Button {
         _init(panel) {
-            if (panel.monitorIndex == undefined)
+            if (panel.monitorIndex === undefined)
                 this._monitorIndex = Main.layoutManager.primaryIndex;
             else this._monitorIndex = panel.monitorIndex;
             this._actionOnWorkspaceGroupNotifyId = 0;
@@ -223,7 +223,7 @@ var MultiMonitorsAppMenuButton = (() => {
         }
 
         _windowEnteredMonitor(metaScreen, monitorIndex, metaWin) {
-            if (monitorIndex == this._monitorIndex) {
+            if (monitorIndex === this._monitorIndex) {
                 switch (metaWin.get_window_type()) {
                     case Meta.WindowType.NORMAL:
                     case Meta.WindowType.DIALOG:
@@ -236,7 +236,7 @@ var MultiMonitorsAppMenuButton = (() => {
         }
 
         _windowLeftMonitor(metaScreen, monitorIndex, metaWin) {
-            if (monitorIndex == this._monitorIndex) {
+            if (monitorIndex === this._monitorIndex) {
                 switch (metaWin.get_window_type()) {
                     case Meta.WindowType.NORMAL:
                     case Meta.WindowType.DIALOG:
@@ -268,7 +268,7 @@ var MultiMonitorsAppMenuButton = (() => {
                 for (let i = 0; i < windows.length; i++) {
                     let win = windows[i];
                     if (win.located_on_workspace(workspace)) {
-                        if (win.get_monitor() == this._monitorIndex) {
+                        if (win.get_monitor() === this._monitorIndex) {
                             if (win.has_focus()) {
                                 this._lastFocusedWindow = win;
                                 //    	        			global.log(this._monitorIndex+": focus :"+win.get_title()+" : "+win.has_focus());
@@ -276,7 +276,7 @@ var MultiMonitorsAppMenuButton = (() => {
                             } else groupWindow = true;
                         } else if (win.has_focus()) groupFocus = true;
                         if (groupFocus && groupWindow) {
-                            if (focusedApp != this._targetApp) {
+                            if (focusedApp !== this._targetApp) {
                                 this._targetAppGroup = focusedApp;
                                 this._actionOnWorkspaceGroupNotifyId =
                                     this._targetAppGroup.connect(
@@ -300,7 +300,7 @@ var MultiMonitorsAppMenuButton = (() => {
             if (
                 this._lastFocusedWindow &&
                 this._lastFocusedWindow.located_on_workspace(workspace) &&
-                this._lastFocusedWindow.get_monitor() == this._monitorIndex
+                this._lastFocusedWindow.get_monitor() === this._monitorIndex
             ) {
                 //			global.log(this._monitorIndex+": lastFocus :"+this._lastFocusedWindow.get_title());
                 return tracker.get_window_app(this._lastFocusedWindow);
@@ -312,7 +312,7 @@ var MultiMonitorsAppMenuButton = (() => {
             );
 
             for (let i = 0; i < windows.length; i++) {
-                if (windows[i].get_monitor() == this._monitorIndex) {
+                if (windows[i].get_monitor() === this._monitorIndex) {
                     this._lastFocusedWindow = windows[i];
                     //        		global.log(this._monitorIndex+": appFind :"+windows[i].get_title());
                     return tracker.get_window_app(windows[i]);
@@ -573,9 +573,9 @@ var MultiMonitorsPanel = (() => {
             return allWindowsByStacking.find((metaWindow) => {
                 let rect = metaWindow.get_frame_rect();
                 return (
-                    metaWindow.get_monitor() == this.monitorIndex &&
+                    metaWindow.get_monitor() === this.monitorIndex &&
                     metaWindow.showing_on_its_workspace() &&
-                    metaWindow.get_window_type() != Meta.WindowType.DESKTOP &&
+                    metaWindow.get_window_type() !== Meta.WindowType.DESKTOP &&
                     metaWindow.maximized_vertically &&
                     stageX > rect.x &&
                     stageX < rect.x + rect.width
