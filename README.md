@@ -1,11 +1,11 @@
 # Multi Monitors Add-On
 
-Extension inspired by https://github.com/darkxst/multiple-monitor-panels
+Extension inspired by <https://github.com/darkxst/multiple-monitor-panels>
 and rewritten from scratch for gnome-shell version 3.10.4. Adds panels
 and thumbnails for additional monitors. Settings changes are applied
 in dynamic fashion, no restart needed.
 
-# Versions
+## Versions
 
 - Branch [master](https://github.com/lazanet/multi-monitors-add-on/tree/master) contains extension for GNOME 42, 43, 44
 - Branch [gnome-3-32_3-36](https://github.com/spin83/multi-monitors-add-on/tree/gnome-3-32_3-36) contains extension for GNOME 3.32, 3.34 and 3.36
@@ -15,11 +15,11 @@ in dynamic fashion, no restart needed.
 - Branch [gnome-3-14](https://github.com/spin83/multi-monitors-add-on/tree/gnome-3-14) contains extension for GNOME 3.14
 - Branch [gnome-3-10](https://github.com/spin83/multi-monitors-add-on/tree/gnome-3-10) contains extension for GNOME 3.10
 
-# Installation from git
+## Installation from git
 
 ```sh
 # clone repo
-git clone git@github.com:lazanet/multi-monitors-add-on.git
+git clone git@github.com:sashauly/multi-monitors-add-on.git
 # cd into cloned repo
 cd multi-monitors-add-on
 # create a local shared gnome shell extensions dir
@@ -30,7 +30,7 @@ ln -sr multi-monitors-add-on@spin83 ~/.local/share/gnome-shell/extensions
 
 Restart the shell and then enable the extension.
 
-# License
+## License
 
 Multi Monitors Add-On extension is distributed under the terms of the
 GNU General Public License, version 2 or later. See the LICENSE file for details.
