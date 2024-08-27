@@ -1,0 +1,3 @@
+package*.json
+template/
+node_modules/

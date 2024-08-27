@@ -1,0 +1,33 @@
+{
+  "name": "multi-monitors-add-on",
+  "version": "1.0.0",
+  "description": "Multi Monitors Add-On extension for GNOME Shell",
+  "type": "module",
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "build:dev": "./scripts/build.sh --unsafe-reload",
+    "build:install": "./scripts/build.sh --install",
+    "check:lint": "eslint src/**/*.js",
+    "check:lint:fix": "eslint --fix src/**/*.js",
+    "check:format": "prettier --check src/**/*.js",
+    "check:format:fix": "prettier --write src/**/*.js",
+    "translations:update": "./scripts/update-translations.sh"
+  },
+  "keywords": [
+    "example",
+    "gnome",
+    "extension"
+  ],
+  "author": "sashauly",
+  "license": "GPL-2.0-only",
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@girs/gjs": "^4.0.0-beta.14",
+    "@girs/gnome-shell": "^46.0.2",
+    "eslint": "^9.9.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsdoc": "^50.2.2",
+    "globals": "^15.9.0",
+    "prettier": "^3.3.3"
+  }
+}

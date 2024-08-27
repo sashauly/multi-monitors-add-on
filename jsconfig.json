@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "target": "ESNext",
+    "baseUrl": ".",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noEmit": true
+  },
+  "files": ["src/extension.js", "src/prefs.js"],
+  "include": ["ambient.d.ts", "src/**/*.js"],
+  "exclude": ["node_modules"]
+}
