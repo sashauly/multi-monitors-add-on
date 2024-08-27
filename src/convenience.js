@@ -33,6 +33,8 @@ const ExtensionUtils = imports.misc.extensionUtils;
 
 /**
  * initTranslations:
+ *
+ * @param domain
  * @domain: (optional): the gettext domain to use
  *
  * Initialize Gettext to load translations from extensionsdir/locale.
@@ -50,12 +52,13 @@ function initTranslations(domain) {
     let localeDir = extension.dir.get_child('locale');
     if (localeDir.query_exists(null))
         Gettext.bindtextdomain(domain, localeDir.get_path());
-    else
-        Gettext.bindtextdomain(domain, Config.LOCALEDIR);
+    else Gettext.bindtextdomain(domain, Config.LOCALEDIR);
 }
 
 /**
  * getSettings:
+ *
+ * @param schema
  * @schema: (optional): the GSettings schema id
  *
  * Builds and return a GSettings schema for @schema, using schema files
@@ -77,17 +80,20 @@ function getSettings(schema) {
     let schemaDir = extension.dir.get_child('schemas');
     let schemaSource;
     if (schemaDir.query_exists(null))
-        schemaSource = GioSSS.new_from_directory(schemaDir.get_path(),
-                                                 GioSSS.get_default(),
-                                                 false);
-    else
-        schemaSource = GioSSS.get_default();
+        schemaSource = GioSSS.new_from_directory(
+            schemaDir.get_path(),
+            GioSSS.get_default(),
+            false
+        );
+    else schemaSource = GioSSS.get_default();
 
     let schemaObj = schemaSource.lookup(schema, true);
     if (!schemaObj)
-        throw new Error('Schema ' + schema + ' could not be found for extension '
-                        + extension.metadata.uuid + '. Please check your installation.');
+        throw new Error(
+            `Schema ${schema} could not be found for extension ${
+                extension.metadata.uuid
+            }. Please check your installation.`
+        );
 
-    return new Gio.Settings({ settings_schema: schemaObj });
+    return new Gio.Settings({settings_schema: schemaObj});
 }
-								  
