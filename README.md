@@ -1,5 +1,9 @@
 # Multi Monitors Add-On
 
+> THIS IS FORK AND STILL WORK IN PROGRESS.
+>
+> DO NOT USE IT YET.!
+
 Extension inspired by <https://github.com/darkxst/multiple-monitor-panels>
 and rewritten from scratch for gnome-shell version 3.10.4. Adds panels
 and thumbnails for additional monitors. Settings changes are applied
