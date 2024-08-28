@@ -149,7 +149,7 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
 
     hidePanel() {
         if (this._changedEnableHotCornersId) {
-            global.settings.disconnect(this._changedEnableHotCornersId);
+            this._settings.disconnect(this._changedEnableHotCornersId);
             this._changedEnableHotCornersId = null;
         }
 
@@ -180,7 +180,7 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
         for (let i = 0; i < panels2remove; i++) {
             let monitorId = this._monitorIds.pop();
             this._popPanel();
-            global.log(`remove: ${monitorId}`);
+            log(`remove: ${monitorId}`);
         }
     }
 
@@ -191,7 +191,7 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
             for (let idx = 0; idx < -monitorChange; idx++) {
                 let monitorId = this._monitorIds.pop();
                 this._popPanel();
-                global.log(`remove: ${monitorId}`);
+                log(`remove: ${monitorId}`);
             }
         }
 
@@ -204,7 +204,7 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
                 if (monitorChange > 0 && j === this._monitorIds.length) {
                     this._monitorIds.push(monitorId);
                     this._pushPanel(i, monitor);
-                    global.log(`new: ${monitorId}`);
+                    log(`new: ${monitorId}`);
                     tIndicators = true;
                 } else if (
                     this._monitorIds[j] > monitorId ||
@@ -213,7 +213,7 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
                     let oldMonitorId = this._monitorIds[j];
                     this._monitorIds[j] = monitorId;
                     this.mmPanelBox[j].updatePanel(monitor);
-                    global.log(`update: ${oldMonitorId}>${monitorId}`);
+                    log(`update: ${oldMonitorId}>${monitorId}`);
                 }
                 j++;
             }

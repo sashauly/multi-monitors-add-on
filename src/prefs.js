@@ -15,18 +15,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, visit https://www.gnu.org/licenses/.
 */
 
-const GObject = imports.gi.GObject;
-const Gdk = imports.gi.Gdk;
-const Gtk = imports.gi.Gtk;
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
+const {Gdk, Gio, GLib, GObject, Gtk, Adw} = imports.gi;
 
 const Gettext = imports.gettext.domain('multi-monitors-add-on');
 const _ = Gettext.gettext;
 
 const ExtensionUtils = imports.misc.extensionUtils;
-const MultiMonitors = ExtensionUtils.getCurrentExtension();
-const Convenience = MultiMonitors.imports.convenience;
+const Me = ExtensionUtils.getCurrentExtension();
+const Convenience = Me.imports.convenience;
 
 const SHOW_INDICATOR_ID = 'show-indicator';
 const SHOW_PANEL_ID = 'show-panel';
@@ -46,12 +42,7 @@ const Columns = {
 var MultiMonitorsPrefsWidget = GObject.registerClass(
     class MultiMonitorsPrefsWidget extends Gtk.Grid {
         _init() {
-            super._init({
-                margin_top: 6,
-                margin_end: 6,
-                margin_bottom: 6,
-                margin_start: 6,
-            });
+            super._init();
 
             this._numRows = 0;
 
@@ -68,10 +59,21 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             this._createUI();
         }
 
-        add(child) {
+        /**
+         * Adds a child widget to the grid
+         *
+         * @param {Gtk.Widget} child - The widget to add
+         * @private
+         */
+        _addToGrid(child) {
             this.attach(child, 0, this._numRows++, 1, 1);
         }
 
+        /**
+         * Creates the UI elements
+         *
+         * @private
+         */
         _createUI() {
             this._addSwitches();
             this._setupStore();
@@ -81,7 +83,22 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             this._connectSignals();
         }
 
+        /**
+         * Adds boolean switches for various settings
+         *
+         * @private
+         */
         _addSwitches() {
+            /**
+             * @typedef {object} switchConfig
+             * @property {string} label - Label for the switch
+             * @property {string} settingId - Setting ID
+             * @property {{none: string, right: string, left: string, auto: string}} [options={}] - Options for the combobox
+             * @property {Gio.Settings} [settings={}] - Settings object
+             */
+            /**
+             * @type {switchConfig[]} switchConfigs - Array of objects containing the following properties:
+             */
             const switchConfigs = [
                 {
                     label: _('Show Multi Monitors indicator on Top Panel.'),
@@ -128,17 +145,27 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                         config.settingId
                     );
                 } else if (config.options) {
-                    this._addComboBoxSwitch(
+                    this._addSettingsComboBoxSwitch(
                         config.label,
+                        this._settings,
                         config.settingId,
                         config.options
                     );
                 } else {
-                    this._addBooleanSwitch(config.label, config.settingId);
+                    this._addSettingsBooleanSwitch(
+                        config.label,
+                        this._settings,
+                        config.settingId
+                    );
                 }
             });
         }
 
+        /**
+         * Sets up the store for the treeview
+         *
+         * @private
+         */
         _setupStore() {
             this._store = new Gtk.ListStore();
             this._store.set_column_types([
@@ -147,6 +174,11 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             ]);
         }
 
+        /**
+         * Creates the treeview for the indicators
+         *
+         * @private
+         */
         _createTreeview() {
             this._treeView = new Gtk.TreeView({
                 model: this._store,
@@ -155,9 +187,14 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             });
             this._treeView.get_selection().set_mode(Gtk.SelectionMode.SINGLE);
 
-            this.add(this._treeView);
+            this._addToGrid(this._treeView);
         }
 
+        /**
+         * Sets up the columns for the treeview
+         *
+         * @private
+         */
         _setupTreeviewColumns() {
             const appColumn = new Gtk.TreeViewColumn({
                 expand: true,
@@ -186,15 +223,25 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             this._treeView.append_column(appColumn);
         }
 
+        /**
+         * Sets up the toolbar for the treeview
+         *
+         * @private
+         */
         _setupToolbar() {
             this._toolbar = new Gtk.Box({
                 orientation: Gtk.Orientation.HORIZONTAL,
             });
             this._toolbar.get_style_context().add_class('inline-toolbar');
 
-            this.add(this._toolbar);
+            this._addToGrid(this._toolbar);
         }
 
+        /**
+         * Connects signals to the various widgets
+         *
+         * @private
+         */
         _connectSignals() {
             this._settings.connect(`changed::${TRANSFER_INDICATORS_ID}`, () =>
                 this._updateIndicators()
@@ -210,6 +257,11 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             this._toolbar.append(removeTButton);
         }
 
+        /**
+         * Updates the indicators in the treeview
+         *
+         * @private
+         */
         _updateIndicators() {
             this._store.clear();
 
@@ -230,6 +282,11 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             }
         }
 
+        /**
+         * Adds an indicator to the treeview
+         *
+         * @private
+         */
         _addIndicator() {
             const dialog = new Gtk.Dialog({
                 title: _('Select indicator'),
@@ -280,7 +337,7 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
                 dialog._store.clear();
                 this._settings
                     .get_strv(AVAILABLE_INDICATORS_ID)
-                    .forEach((indicator) => {
+                    .forEach((/** @type {any} */ indicator) => {
                         if (!transfers.hasOwnProperty(indicator)) {
                             let iter = dialog._store.append();
                             dialog._store.set(
@@ -382,6 +439,11 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             });
         }
 
+        /**
+         * Removes an indicator from the treeview
+         *
+         * @private
+         */
         _removeIndicator() {
             let [any, model, iter] = this._treeView
                 .get_selection()
@@ -402,22 +464,17 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             }
         }
 
-        _addComboBoxSwitch(label, schemaId, options) {
-            this._addSettingsComboBoxSwitch(
-                label,
-                this._settings,
-                schemaId,
-                options
-            );
-        }
-
-        _addSettingsComboBoxSwitch(label, settings, schemaId, options) {
+        /**
+         * Adds a boolean switch for a setting
+         *
+         * @param {string} label - Label for the switch
+         * @param {Gio.Settings} settings - Settings object
+         * @param {string} settingId - Setting ID
+         * @param {{[s:string]: string}} [options={}] - Options for the combobox
+         * @private
+         */
+        _addSettingsComboBoxSwitch(label, settings, settingId, options) {
             const gHBox = new Gtk.Box({
-                orientation: Gtk.Orientation.HORIZONTAL,
-                margin_top: 10,
-                margin_end: 10,
-                margin_bottom: 10,
-                margin_start: 10,
                 spacing: 20,
                 hexpand: true,
             });
@@ -428,32 +485,33 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             gHBox.append(gLabel);
 
             const gCBox = new Gtk.ComboBoxText({halign: Gtk.Align.END});
-            Object.entries(options).forEach(([key, val]) => {
-                gCBox.append(key, val);
-            });
+            if (options) {
+                Object.entries(options).forEach(([key, val]) => {
+                    gCBox.append(key, val);
+                });
+            }
             gHBox.append(gCBox);
 
-            this.add(gHBox);
+            this._addToGrid(gHBox);
 
             settings.bind(
-                schemaId,
+                settingId,
                 gCBox,
                 'active-id',
                 Gio.SettingsBindFlags.DEFAULT
             );
         }
 
-        _addBooleanSwitch(label, schemaId) {
-            this._addSettingsBooleanSwitch(label, this._settings, schemaId);
-        }
-
-        _addSettingsBooleanSwitch(label, settings, schemaId) {
+        /**
+         * Adds a boolean switch for a setting
+         *
+         * @param {string} label - Label for the switch
+         * @param {Gio.Settings} settings - Settings object to bind to
+         * @param {string} settingId - Setting ID
+         * @private
+         */
+        _addSettingsBooleanSwitch(label, settings, settingId) {
             const gHBox = new Gtk.Box({
-                orientation: Gtk.Orientation.HORIZONTAL,
-                margin_top: 10,
-                margin_end: 10,
-                margin_bottom: 10,
-                margin_start: 10,
                 spacing: 20,
                 hexpand: true,
             });
@@ -464,10 +522,10 @@ var MultiMonitorsPrefsWidget = GObject.registerClass(
             gHBox.append(gLabel);
             const gSwitch = new Gtk.Switch({halign: Gtk.Align.END});
             gHBox.append(gSwitch);
-            this.add(gHBox);
+            this._addToGrid(gHBox);
 
             settings.bind(
-                schemaId,
+                settingId,
                 gSwitch,
                 'active',
                 Gio.SettingsBindFlags.DEFAULT
@@ -484,8 +542,24 @@ function init(metadata) {
     Convenience.initTranslations();
 }
 
-function buildPrefsWidget() {
-    let widget = new MultiMonitorsPrefsWidget();
+function fillPreferencesWindow(window) {
+    window._settings = Convenience.getSettings();
 
-    return widget;
+    const widget = new MultiMonitorsPrefsWidget();
+
+    const page = new Adw.PreferencesPage({
+        title: _('General'),
+        icon_name: 'dialog-information-symbolic',
+    });
+    const group = new Adw.PreferencesGroup({
+        title: _('Multi Monitors'),
+        description: _(
+            'Select what information you want to see on additional monitors.'
+        ),
+    });
+    group.add(widget);
+    page.add(group);
+    window.add(page);
+    window.set_default_size(widget.width, widget.height);
+    widget.show();
 }

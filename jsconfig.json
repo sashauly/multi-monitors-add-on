@@ -4,6 +4,7 @@
     "target": "ESNext",
     "baseUrl": ".",
     "strict": true,
+    "checkJs": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noEmit": true

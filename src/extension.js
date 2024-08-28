@@ -15,6 +15,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, visit https://www.gnu.org/licenses/.
 */
 
+const GETTEXT_DOMAIN = 'multi-monitors-add-on';
+
 const {Clutter, Gio} = imports.gi;
 
 const Main = imports.ui.main;
@@ -85,10 +87,14 @@ function gnomeShellVersion() {
 }
 
 class MultiMonitorsAddOn {
+    /**
+     *
+     * @param {string | null} uuid
+     * @param {string | null} version
+     */
     constructor(uuid, version) {
         this._uuid = uuid;
         this._version = version;
-        this._settings = Convenience.getSettings();
         //    this._ov_settings = new Gio.Settings({ schema: OVERRIDE_SCHEMA });
         this._mu_settings = new Gio.Settings({schema: MUTTER_SCHEMA});
 
@@ -120,93 +126,93 @@ class MultiMonitorsAddOn {
         }
     }
 
-    _showThumbnailsSlider() {
-        if (
-            this._settings.get_string(THUMBNAILS_SLIDER_POSITION_ID) === 'none'
-        ) {
-            this._hideThumbnailsSlider();
-            return;
-        }
+    // _showThumbnailsSlider() {
+    //     if (
+    //         this._settings.get_string(THUMBNAILS_SLIDER_POSITION_ID) === 'none'
+    //     ) {
+    //         this._hideThumbnailsSlider();
+    //         return;
+    //     }
 
-        // if (this._ov_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
-        //     this._ov_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
-        if (this._mu_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
-            this._mu_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
+    //     // if (this._ov_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
+    //     //     this._ov_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
+    //     if (this._mu_settings.get_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID))
+    //         this._mu_settings.set_boolean(WORKSPACES_ONLY_ON_PRIMARY_ID, false);
 
-        if (Main.mmOverview) return;
+    //     if (Main.mmOverview) return;
 
-        Main.mmOverview = [];
-        for (let idx = 0; idx < Main.layoutManager.monitors.length; idx++) {
-            if (idx !== Main.layoutManager.primaryIndex) {
-                Main.mmOverview[idx] = new MMOverview.MultiMonitorsOverview(
-                    idx
-                );
-            }
-        }
+    //     Main.mmOverview = [];
+    //     for (let idx = 0; idx < Main.layoutManager.monitors.length; idx++) {
+    //         if (idx !== Main.layoutManager.primaryIndex) {
+    //             Main.mmOverview[idx] = new MMOverview.MultiMonitorsOverview(
+    //                 idx
+    //             );
+    //         }
+    //     }
 
-        this.syncWorkspacesActualGeometry =
-            Main.overview.searchController._workspacesDisplay._syncWorkspacesActualGeometry;
-        Main.overview.searchController._workspacesDisplay._syncWorkspacesActualGeometry =
-            function () {
-                if (this._inWindowFade) return;
+    //     this.syncWorkspacesActualGeometry =
+    //         Main.overview.searchController._workspacesDisplay._syncWorkspacesActualGeometry;
+    //     Main.overview.searchController._workspacesDisplay._syncWorkspacesActualGeometry =
+    //         function () {
+    //             if (this._inWindowFade) return;
 
-                const primaryView = this._getPrimaryView();
-                if (primaryView) {
-                    primaryView.ease({
-                        ...this._actualGeometry,
-                        duration: Main.overview.animationInProgress
-                            ? ANIMATION_TIME
-                            : 0,
-                        mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                    });
-                }
+    //             const primaryView = this._getPrimaryView();
+    //             if (primaryView) {
+    //                 primaryView.ease({
+    //                     ...this._actualGeometry,
+    //                     duration: Main.overview.animationInProgress
+    //                         ? ANIMATION_TIME
+    //                         : 0,
+    //                     mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+    //                 });
+    //             }
 
-                for (let idx = 0; idx < Main.mmOverview.length; idx++) {
-                    if (!Main.mmOverview[idx]) continue;
-                    if (!Main.mmOverview[idx]._overview) continue;
-                    const mmView =
-                        Main.mmOverview[idx]._overview._controls
-                            ._workspacesViews;
-                    if (!mmView) continue;
+    //             for (let idx = 0; idx < Main.mmOverview.length; idx++) {
+    //                 if (!Main.mmOverview[idx]) continue;
+    //                 if (!Main.mmOverview[idx]._overview) continue;
+    //                 const mmView =
+    //                     Main.mmOverview[idx]._overview._controls
+    //                         ._workspacesViews;
+    //                 if (!mmView) continue;
 
-                    const mmGeometry =
-                        Main.mmOverview[idx].getWorkspacesActualGeometry();
-                    mmView.ease({
-                        ...mmGeometry,
-                        duration: Main.overview.animationInProgress
-                            ? ANIMATION_TIME
-                            : 0,
-                        mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                    });
-                }
-            };
-    }
+    //                 const mmGeometry =
+    //                     Main.mmOverview[idx].getWorkspacesActualGeometry();
+    //                 mmView.ease({
+    //                     ...mmGeometry,
+    //                     duration: Main.overview.animationInProgress
+    //                         ? ANIMATION_TIME
+    //                         : 0,
+    //                     mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+    //                 });
+    //             }
+    //         };
+    // }
 
-    _hideThumbnailsSlider() {
-        if (!Main.mmOverview) return;
+    // _hideThumbnailsSlider() {
+    //     if (!Main.mmOverview) return;
 
-        for (let idx = 0; idx < Main.mmOverview.length; idx++) {
-            if (Main.mmOverview[idx]) Main.mmOverview[idx].destroy();
-        }
-        Main.mmOverview = null;
-        Main.overview.searchController._workspacesDisplay._syncWorkspacesActualGeometry =
-            this.syncWorkspacesActualGeometry;
-    }
+    //     for (let idx = 0; idx < Main.mmOverview.length; idx++) {
+    //         if (Main.mmOverview[idx]) Main.mmOverview[idx].destroy();
+    //     }
+    //     Main.mmOverview = null;
+    //     Main.overview.searchController._workspacesDisplay._syncWorkspacesActualGeometry =
+    //         this.syncWorkspacesActualGeometry;
+    // }
 
-    _relayout() {
-        if (this._mmMonitors !== Main.layoutManager.monitors.length) {
-            this._mmMonitors = Main.layoutManager.monitors.length;
-            global.log(`pi:${Main.layoutManager.primaryIndex}`);
-            for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
-                let monitor = Main.layoutManager.monitors[i];
-                global.log(
-                    `i:${i} x:${monitor.x} y:${monitor.y} w:${monitor.width} h:${monitor.height}`
-                );
-            }
-            this._hideThumbnailsSlider();
-            this._showThumbnailsSlider();
-        }
-    }
+    // _relayout() {
+    //     if (this._mmMonitors !== Main.layoutManager.monitors.length) {
+    //         this._mmMonitors = Main.layoutManager.monitors.length;
+    //         log(`pi:${Main.layoutManager.primaryIndex}`);
+    //         for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
+    //             let monitor = Main.layoutManager.monitors[i];
+    //             log(
+    //                 `i:${i} x:${monitor.x} y:${monitor.y} w:${monitor.width} h:${monitor.height}`
+    //             );
+    //         }
+    //         this._hideThumbnailsSlider();
+    //         this._showThumbnailsSlider();
+    //     }
+    // }
 
     _switchOffThumbnails() {
         if (
@@ -218,11 +224,12 @@ class MultiMonitorsAddOn {
     }
 
     enable() {
-        global.log(`Enabling Multi Monitors Add-On (${this._version})...`);
+        log(`Enabling Multi Monitors Add-On (${this._version})...`);
 
         if (Main.panel.statusArea.MultiMonitorsAddOn) this.disable();
 
         this._mmMonitors = 0;
+        this._settings = Convenience.getSettings();
 
         // this._switchOffThumbnailsOvId = this._ov_settings.connect(
         //     `changed::${WORKSPACES_ONLY_ON_PRIMARY_ID}`,
@@ -246,24 +253,24 @@ class MultiMonitorsAddOn {
         );
         Main.mmLayoutManager.showPanel();
 
-        this._thumbnailsSliderPositionId = this._settings.connect(
-            `changed::${THUMBNAILS_SLIDER_POSITION_ID}`,
-            this._showThumbnailsSlider.bind(this)
-        );
-        this._relayoutId = Main.layoutManager.connect(
-            'monitors-changed',
-            this._relayout.bind(this)
-        );
-        this._relayout();
+        // this._thumbnailsSliderPositionId = this._settings.connect(
+        //     `changed::${THUMBNAILS_SLIDER_POSITION_ID}`,
+        //     this._showThumbnailsSlider.bind(this)
+        // );
+        // this._relayoutId = Main.layoutManager.connect(
+        //     'monitors-changed',
+        //     this._relayout.bind(this)
+        // );
+        // this._relayout();
     }
 
     disable() {
-        Main.layoutManager.disconnect(this._relayoutId);
+        // Main.layoutManager.disconnect(this._relayoutId);
         // this._ov_settings.disconnect(this._switchOffThumbnailsOvId);
-        this._mu_settings.disconnect(this._switchOffThumbnailsMuId);
+        // this._mu_settings.disconnect(this._switchOffThumbnailsMuId);
 
         this._settings.disconnect(this._showPanelId);
-        this._settings.disconnect(this._thumbnailsSliderPositionId);
+        // this._settings.disconnect(this._thumbnailsSliderPositionId);
         this._settings.disconnect(this._showIndicatorId);
 
         this._hideIndicator();
@@ -271,13 +278,14 @@ class MultiMonitorsAddOn {
         Main.mmLayoutManager.hidePanel();
         Main.mmLayoutManager = null;
 
-        this._hideThumbnailsSlider();
+        // this._hideThumbnailsSlider();
         this._mmMonitors = 0;
 
         this._version = null;
         this._uuid = null;
+        this._settings = null;
 
-        global.log('Disabling Multi Monitors Add-On ...');
+        log('Disabling Multi Monitors Add-On ...');
     }
 }
 
@@ -308,25 +316,25 @@ class MultiMonitorsAddOn {
  */
 function init(meta) {
     let version;
-    Convenience.initTranslations();
+    Convenience.initTranslations(GETTEXT_DOMAIN);
 
     // fix bug in panel: Destroy function many time added to this same indicator.
-    Main.panel._ensureIndicator = function (role) {
-        let indicator = this.statusArea[role];
-        if (indicator) {
-            indicator.container.show();
-            return null;
-        } else {
-            let constructor = PANEL_ITEM_IMPLEMENTATIONS[role];
-            if (!constructor) {
-                // This icon is not implemented (this is a bug)
-                return null;
-            }
-            indicator = new constructor(this);
-            this.statusArea[role] = indicator;
-        }
-        return indicator;
-    };
+    // Main.panel._ensureIndicator = function (role) {
+    //     let indicator = this.statusArea[role];
+    //     if (indicator) {
+    //         indicator.container.show();
+    //         return null;
+    //     } else {
+    //         let constructor = PANEL_ITEM_IMPLEMENTATIONS[role];
+    //         if (!constructor) {
+    //             // This icon is not implemented (this is a bug)
+    //             return null;
+    //         }
+    //         indicator = new constructor(this);
+    //         this.statusArea[role] = indicator;
+    //     }
+    //     return indicator;
+    // };
 
     const metaVersion = MultiMonitors.metadata['version'];
     if (Number.isFinite(metaVersion)) {

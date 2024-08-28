@@ -50,7 +50,9 @@ function initTranslations(domain) {
     let localeDir = currentExtension.dir.get_child('locale');
     if (localeDir.query_exists(null))
         Gettext.bindtextdomain(domain, localeDir.get_path());
-    else Gettext.bindtextdomain(domain, Config.LOCALEDIR);
+    else {
+        Gettext.bindtextdomain(domain, Config.LOCALEDIR);
+    }
 }
 
 /**

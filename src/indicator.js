@@ -18,6 +18,7 @@ along with this program; if not, visit https://www.gnu.org/licenses/.
 const {St, Gio, GLib, GObject} = imports.gi;
 
 const Util = imports.misc.util;
+const ExtensionUtils = imports.misc.extensionUtils;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 
@@ -28,8 +29,8 @@ const MultiMonitors = CE.imports.extension;
 const Convenience = CE.imports.convenience;
 const extensionPath = CE.path;
 
-var MultiMonitorsIndicator = (() => {
-    let MultiMonitorsIndicator = class MultiMonitorsIndicator extends PanelMenu.Button {
+var MultiMonitorsIndicator = GObject.registerClass(
+    class MultiMonitorsIndicator extends PanelMenu.Button {
         _init() {
             super._init(0.0, 'MultiMonitorsAddOn', false);
 
@@ -42,9 +43,8 @@ var MultiMonitorsIndicator = (() => {
             this._mmStatusIcon.hide();
             this.add_child(this._mmStatusIcon);
             this._leftRightIcon = true;
-            this.menu.addAction(
-                _('Preferences'),
-                this._onPreferences.bind(this)
+            this.menu.addAction(_('Preferences'), () =>
+                ExtensionUtils.openPrefs()
             );
             this._viewMonitorsId = Main.layoutManager.connect(
                 'monitors-changed',
@@ -64,6 +64,11 @@ var MultiMonitorsIndicator = (() => {
                 .some((a) => a.visible);
         }
 
+        /**
+         *
+         * @param {St.Icon} icon
+         * @param {string} iconName
+         */
         _icon_name(icon, iconName) {
             icon.set_gicon(
                 Gio.icon_new_for_string(
@@ -78,10 +83,9 @@ var MultiMonitorsIndicator = (() => {
             let monitorChange =
                 Main.layoutManager.monitors.length - monitors.length;
             if (monitorChange > 0) {
-                global.log('Add Monitors ...');
+                log('Add Monitors...');
                 for (let idx = 0; idx < monitorChange; idx++) {
-                    let icon;
-                    icon = new St.Icon({
+                    const icon = new St.Icon({
                         style_class:
                             'system-status-icon multimonitor-status-icon',
                     });
@@ -93,12 +97,14 @@ var MultiMonitorsIndicator = (() => {
 
                     if (this._leftRightIcon)
                         this._icon_name(icon, 'multi-monitors-l-symbolic');
-                    else this._icon_name(icon, 'multi-monitors-r-symbolic');
+                    else {
+                        this._icon_name(icon, 'multi-monitors-r-symbolic');
+                    }
                     this._leftRightIcon = !this._leftRightIcon;
                 }
                 this._syncIndicatorsVisible();
             } else if (monitorChange < 0) {
-                global.log('Remove Monitors ...');
+                log('Remove Monitors...');
                 monitorChange = -monitorChange;
 
                 for (let idx = 0; idx < monitorChange; idx++) {
@@ -109,21 +115,5 @@ var MultiMonitorsIndicator = (() => {
                 }
             }
         }
-
-        _onPreferences() {
-            const uuid = 'multi-monitors-add-on@spin83';
-            Gio.DBus.session.call(
-                'org.gnome.Shell.Extensions',
-                '/org/gnome/Shell/Extensions',
-                'org.gnome.Shell.Extensions',
-                'OpenExtensionPrefs',
-                new GLib.Variant('(ssa{sv})', [uuid, '', {}]),
-                null,
-                Gio.DBusCallFlags.NONE,
-                -1,
-                null
-            );
-        }
-    };
-    return GObject.registerClass(MultiMonitorsIndicator);
-})();
+    }
+);
